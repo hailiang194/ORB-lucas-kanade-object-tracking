@@ -104,7 +104,6 @@ if __name__ == "__main__":
     old_points = None
     query_points = None
     dst = None
-    need_reset = True
 
     FRAMES_BUFFER = 20
     
@@ -142,7 +141,6 @@ if __name__ == "__main__":
             if not dst is None:
                 old_points = points
                 old_frame = process_frame
-                need_reset = False
 
         else:
             new_points, status, error = cv2.calcOpticalFlowPyrLK(old_frame, process_frame, old_points, None, **lk_params)
@@ -164,14 +162,7 @@ if __name__ == "__main__":
             old_points = new_points
             buffer = buffer + 1
 
-            # need_reset = (status.size - np.count_nonzero(status) > 10)
-            # if need_reset:
-            #     buffer = 0
-            #     old_frame = None
-            #     old_points = None
-            #     query_points = None
-            #     dst = None
-            
+           
 
         if dst is None or not is_valid_homography(dst, img):
             cv2.imshow("frame", frame)
