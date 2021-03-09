@@ -97,16 +97,16 @@ if __name__ == "__main__":
     orb = cv2.ORB_create(scoreType=cv2.ORB_FAST_SCORE, nfeatures=2000)
     bf = cv2.BFMatcher(cv2.NORM_HAMMING)
     kp_image, desc_image = orb.detectAndCompute(img, None)
-    corners = []
-    lk_params = dict(winSize=(15, 15), 
-                     maxLevel = 3,
+    lk_params = dict(winSize=(25, 25), 
+                     maxLevel = 9,
                      criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
     old_frame = None
     old_points = None
     query_points = None
     dst = None
+    need_reset = True
 
-    FRAMES_BUFFER = 15
+    FRAMES_BUFFER = 20
     
     buffer = 0
 
@@ -142,6 +142,7 @@ if __name__ == "__main__":
             if not dst is None:
                 old_points = points
                 old_frame = process_frame
+                need_reset = False
 
         else:
             new_points, status, error = cv2.calcOpticalFlowPyrLK(old_frame, process_frame, old_points, None, **lk_params)
@@ -154,16 +155,27 @@ if __name__ == "__main__":
             # print(np.amax(np.abs(new_points - old_points)))
             # print(np.amax(np.linalg.norm(old_points - new_points, axis=1)))
             # print(old_points.shape[0])
+            print(status.size - np.count_nonzero(status))
+            # print(error)
             for i in range(old_points.shape[0]):
                 cv2.line(frame, (int(old_points[i, 0]), int(old_points[i, 1])), (int(new_points[i, 0]), int(new_points[i, 1])), (0, 255, 0), 3)
             dst = cv2.perspectiveTransform(pts, mat)
             old_frame = process_frame
             old_points = new_points
             buffer = buffer + 1
+
+            # need_reset = (status.size - np.count_nonzero(status) > 10)
+            # if need_reset:
+            #     buffer = 0
+            #     old_frame = None
+            #     old_points = None
+            #     query_points = None
+            #     dst = None
             
 
         if dst is None or not is_valid_homography(dst, img):
             cv2.imshow("frame", frame)
+            buffer = FRAMES_BUFFER
         else:
             test = cv2.polylines(frame, [np.int32(dst)], True, (255, 0, 0), 3)
             cv2.imshow("frame", test)
